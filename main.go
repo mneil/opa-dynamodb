@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 
+	"github.com/mneil/opa-dynamodb/policy"
 	"github.com/open-policy-agent/opa/cmd"
 	log "github.com/sirupsen/logrus"
 )
@@ -14,6 +15,7 @@ func init() {
 }
 func main() {
 	log.Info("Entering application")
+	policy.RegisterDynamodbPolicy()
 	log.Info("Running OPA")
 	if err := cmd.RootCommand.Execute(); err != nil {
 		log.Error(err)

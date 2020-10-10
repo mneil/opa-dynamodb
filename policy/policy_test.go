@@ -49,44 +49,87 @@ func startLocalServer(ctx context.Context, addr string) error {
 }
 
 func TestPolicyDataIntegration(t *testing.T) {
+	// requires dynamo db connection and runs local opa server
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
 	}
 	addr := "http://127.0.0.1:8080"
+	// register our dynamo function
 	RegisterDynamodbPolicy()
 	ctx := context.Background()
 	defer ctx.Done()
+	// start our opa server
 	err := startLocalServer(ctx, addr)
 	assert.Nil(t, err)
-	body, err := json.Marshal(struct {
-		Input interface{}
+	// the test cases to check against
+	cases := []struct {
+		name      string
+		policy    string
+		principal string
+		namespace string
+		data      []map[string]string
+		allow     bool
 	}{
-		Input: struct {
-			Principal string
-			Namespace string
-			Data      []map[string]string
-		}{
-			Principal: "baz",
-			Namespace: "foo/bar",
-			Data: []map[string]string{
-				{"server": "example"},
+		{
+			name:      "rbac not allow bob",
+			policy:    "rbac/authz",
+			principal: "baz",
+			namespace: "foo/bar",
+			data: []map[string]string{
+				{
+					"user":   "bob",
+					"action": "read",
+					"object": "server123",
+				},
 			},
+			allow: false,
 		},
-	})
-	resp, err := http.Post(
-		fmt.Sprintf("%s/v1/example", addr),
-		"application/json",
-		bytes.NewBuffer(body),
-	)
-	assert.Nil(t, err)
-	defer resp.Body.Close()
-	assert.Equal(t, resp.StatusCode, http.StatusOK, "request should be ok")
-	body, err = ioutil.ReadAll(resp.Body)
-	var v struct {
-		result struct {
-			allow bool
-		}
+		{
+			name:      "rbac allow alice",
+			policy:    "rbac/authz",
+			principal: "baz",
+			namespace: "foo/bar",
+			data: []map[string]string{
+				{
+					"user":   "alice",
+					"action": "read",
+					"object": "server123",
+				},
+			},
+			allow: false,
+		},
 	}
-	json.Unmarshal(body, &v)
-	assert.Equal(t, v.result.allow, false)
+	// our actual tests is here in the loop
+	for _, c := range cases {
+		body, err := json.Marshal(struct {
+			Input interface{}
+		}{
+			Input: struct {
+				principal string
+				namespace string
+				data      []map[string]string
+			}{
+				principal: c.principal,
+				namespace: c.namespace,
+				data:      c.data,
+			},
+		})
+		resp, err := http.Post(
+			fmt.Sprintf("%s/v1/data/%s", addr, c.policy),
+			"application/json",
+			bytes.NewBuffer(body),
+		)
+		assert.Nil(t, err, c.name)
+		defer resp.Body.Close()
+		assert.Equal(t, resp.StatusCode, http.StatusOK, c.name)
+		body, err = ioutil.ReadAll(resp.Body)
+		var v struct {
+			result struct {
+				allow bool
+			}
+		}
+		json.Unmarshal(body, &v)
+		assert.Equal(t, v.result.allow, c.allow, c.name)
+	}
+
 }

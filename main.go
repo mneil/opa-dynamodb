@@ -15,7 +15,7 @@ func init() {
 }
 func main() {
 	log.Info("Entering application")
-	policy.RegisterDynamodbPolicy()
+	policy.RegisterDynamodbPolicy(policy.NewDynamoConfigFromEnv())
 	log.Info("Running OPA")
 	if err := cmd.RootCommand.Execute(); err != nil {
 		log.Error(err)

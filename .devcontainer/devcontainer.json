@@ -17,7 +17,6 @@
 		"tsandall.opa"
 	],
 	"remoteEnv": {
-		"AWS_DEFAULT_REGION": "us-east-1",
 		"LOCAL_WORKSPACE_FOLDER": "${localWorkspaceFolder}"
 	}
 }

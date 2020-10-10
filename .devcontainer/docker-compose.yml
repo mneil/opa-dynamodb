@@ -12,6 +12,7 @@ services:
       AWS_REGION: us-east-1
       AWS_ACCESS_KEY_ID: foo
       AWS_SECRET_ACCESS_KEY: bar
+      TABLE_NAME: OpaDynamodbIntegrationTest
     ports:
       - 8001:8001
     depends_on:

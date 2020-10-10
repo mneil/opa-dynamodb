@@ -55,7 +55,7 @@ func TestPolicyDataIntegration(t *testing.T) {
 	}
 	addr := "http://127.0.0.1:8080"
 	// register our dynamo function
-	RegisterDynamodbPolicy()
+	RegisterDynamodbPolicy(NewDynamoConfigFromEnv())
 	ctx := context.Background()
 	defer ctx.Done()
 	// start our opa server

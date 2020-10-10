@@ -1,0 +1,23 @@
+// For format details, see https://aka.ms/vscode-remote/devcontainer.json or this file's README at:
+// https://github.com/microsoft/vscode-dev-containers/tree/v0.117.1/containers/go
+{
+	"name": "Go",
+	"dockerComposeFile": "docker-compose.yml",
+	"service": "opa",
+	"remoteUser": "vscode",
+	"workspaceFolder": "/workspace",
+	"settings": {
+		"terminal.integrated.shell.linux": "/bin/bash",
+		"go.gopath": "/go",
+		"go.inferGopath": true,
+		"go.useLanguageServer": true
+	},
+	"extensions": [
+		"ms-vscode.go",
+		"tsandall.opa"
+	],
+	"remoteEnv": {
+		"AWS_DEFAULT_REGION": "us-east-1",
+		"LOCAL_WORKSPACE_FOLDER": "${localWorkspaceFolder}"
+	}
+}

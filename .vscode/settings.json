@@ -1,0 +1,13 @@
+{
+    "go.gopath": "/go",
+    "go.goroot": "/usr/local/go",
+    "go.formatTool": "goformat",
+    "go.autocompleteUnimportedPackages": true,
+    "[go]": {
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+        "source.organizeImports": true
+       }
+},
+"go.inferGopath": false
+}

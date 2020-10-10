@@ -21,10 +21,8 @@ type DynamoStore struct {
 func NewDynamoStore(session *session.Session, table string) *DynamoStore {
 	svc := dynamodb.New(session)
 	return &DynamoStore{
-		svc:          svc,
-		TableName:    table,
-		PartitionKey: "PK",
-		SortKey:      "SK",
+		svc:       svc,
+		TableName: table,
 	}
 }
 
@@ -74,8 +72,8 @@ func (dynamo *DynamoStore) Get(namespace string, principal string) (interface{},
 	for index, item := range result.Items {
 		var tmpItem map[string]interface{}
 		dynamodbattribute.UnmarshalMap(item, &tmpItem)
-		delete(tmpItem, "PK")
-		delete(tmpItem, "SK")
+		delete(tmpItem, dynamo.PartitionKey)
+		delete(tmpItem, dynamo.SortKey)
 		items[index] = tmpItem
 	}
 	return items, nil

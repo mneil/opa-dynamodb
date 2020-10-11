@@ -1,10 +1,11 @@
 package rbac.authz
 
 # user-role assignments
-user_roles := {
-    "alice": ["engineering", "webdev"],
-    "bob": ["hr"]
-}
+user_roles := dynamodb.policy("foo", "bar")
+# user_roles := {
+#     "alice": ["engineering", "webdev"],
+#     "bob": ["hr"]
+# }
 
 # role-permissions assignments
 role_permissions := {

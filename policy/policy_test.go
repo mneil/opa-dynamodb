@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -46,6 +48,18 @@ func startLocalServer(ctx context.Context, addr string) error {
 		time.Sleep(delay)
 	}
 	return fmt.Errorf("Failed to start OPA server")
+}
+
+func TestMain(m *testing.M) {
+	flag.Parse()
+	if !testing.Short() {
+		// inflate db
+	}
+	code := m.Run()
+	if !testing.Short() {
+		// deflate db
+	}
+	os.Exit(code)
 }
 
 func TestPolicyDataIntegration(t *testing.T) {

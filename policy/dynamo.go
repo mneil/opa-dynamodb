@@ -30,7 +30,7 @@ func getenv(key, fallback string) string {
 // NewDynamoConfigFromEnv creates a new dynamo config from environment variables with defaults
 func NewDynamoConfigFromEnv() *DynamoConfig {
 	return &DynamoConfig{
-		TableName:    getenv("ENDPOINT_URL", "OpaDynamoDB"),
+		TableName:    getenv("DYNAMO_TABLE", "OpaDynamoDB"),
 		PartitionKey: getenv("DYNAMO_PK", "PK"),
 		SortKey:      getenv("DYNAMO_SK", "SK"),
 		Endpoint:     getenv("ENDPOINT_URL", ""),

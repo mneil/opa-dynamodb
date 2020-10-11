@@ -135,7 +135,7 @@ func TestPolicyDataIntegration(t *testing.T) {
 		)
 		assert.Nil(t, err, c.name)
 		defer resp.Body.Close()
-		assert.Equal(t, resp.StatusCode, http.StatusOK, c.name)
+		assert.Equal(t, http.StatusOK, resp.StatusCode, c.name)
 		body, err = ioutil.ReadAll(resp.Body)
 		var v struct {
 			result struct {
@@ -143,7 +143,7 @@ func TestPolicyDataIntegration(t *testing.T) {
 			}
 		}
 		json.Unmarshal(body, &v)
-		assert.Equal(t, v.result.allow, c.allow, c.name)
+		assert.Equal(t, c.allow, v.result.allow, c.name)
 	}
 
 }

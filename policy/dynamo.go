@@ -49,7 +49,7 @@ func RegisterDynamodbPolicy(dynamoConfig *DynamoConfig) {
 	Store.PartitionKey = dynamoConfig.PartitionKey
 	Store.SortKey = dynamoConfig.SortKey
 	policy := NewPolicy("dynamo", Store)
-	log.Info("Registering dynamodb.polcy")
+	log.Info("Registering dynamodb.policy")
 	rego.RegisterBuiltin2(
 		&rego.Function{
 			Name:    "dynamodb.policy",

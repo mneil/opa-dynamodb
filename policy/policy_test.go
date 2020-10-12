@@ -4,63 +4,13 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"net/url"
-	"os"
-	"path/filepath"
-	"strconv"
-	"strings"
 	"testing"
-	"time"
 
-	"github.com/open-policy-agent/opa/runtime"
 	"github.com/stretchr/testify/assert"
 )
-
-func startLocalServer(ctx context.Context, addr string) error {
-	parsedURL, err := url.Parse(addr)
-	splitURL := strings.Split(parsedURL.Host, ":")
-	port, err := strconv.Atoi(splitURL[1])
-	Runtime, err := runtime.NewRuntime(ctx, runtime.Params{
-		Addrs: &[]string{
-			fmt.Sprintf("%s:%d", splitURL[0], port+1),
-		},
-		InsecureAddr: parsedURL.Host,
-		Paths: []string{
-			filepath.Join("..", "testdata", "attestors"),
-		},
-	})
-	if err != nil {
-		return err
-	}
-	go Runtime.StartServer(ctx)
-	delay := time.Duration(10) * time.Millisecond
-	retries := 300 // wait 3 seconds for server to start
-	for i := 0; i < retries; i++ {
-		if _, err := http.Get(
-			addr,
-		); err == nil {
-			return nil
-		}
-		time.Sleep(delay)
-	}
-	return fmt.Errorf("Failed to start OPA server")
-}
-
-func TestMain(m *testing.M) {
-	flag.Parse()
-	if !testing.Short() {
-		// inflate db
-	}
-	code := m.Run()
-	if !testing.Short() {
-		// deflate db
-	}
-	os.Exit(code)
-}
 
 func TestPolicyDataIntegration(t *testing.T) {
 	// requires dynamo db connection and runs local opa server

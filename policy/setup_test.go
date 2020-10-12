@@ -129,7 +129,7 @@ func TestMain(m *testing.M) {
 	code := m.Run()
 	if !testing.Short() {
 		// deflate db
-		// deleteDynamoDBTable()
+		deleteDynamoDBTable()
 	}
 	os.Exit(code)
 }

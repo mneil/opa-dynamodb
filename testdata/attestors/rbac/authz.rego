@@ -1,7 +1,7 @@
 package rbac.authz
 
 # user-role assignments
-user_roles := dynamodb.policy("foo", "bar")
+# user_roles := dynamodb.policy("foo/bar", "alice")
 # user_roles := {
 #     "alice": ["engineering", "webdev"],
 #     "bob": ["hr"]
@@ -19,7 +19,7 @@ role_permissions := {
 default allow = false
 allow {
     # lookup the list of roles for the user
-    roles := user_roles[input.user]
+    roles := dynamodb.policy("foo/bar", input.user)
     # for each role in that list
     r := roles[_]
     # lookup the permissions list for role r

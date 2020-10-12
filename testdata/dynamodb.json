@@ -1,0 +1,12 @@
+[
+    {
+        "PK": "foo/bar",
+        "SK": "alice",
+        "roles": ["engineering", "webdev"]
+    },
+    {
+        "PK": "foo/bar",
+        "SK": "bob",
+        "roles": ["hr"]
+    }
+]

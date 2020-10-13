@@ -14,6 +14,8 @@ unit:
 integration:
 	go test -run Integration ./...
 
-test: unit integration
+test:
+	go test -cover -coverprofile cover.out ./...
+	go tool cover -func cover.out
 
 .PHONY: run unit integration

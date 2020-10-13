@@ -66,18 +66,7 @@ func (dynamo *DynamoStore) Get(namespace string, principal string) (interface{},
 	result, err := dynamo.svc.Query(input)
 	if err != nil {
 		if aerr, ok := err.(awserr.Error); ok {
-			switch aerr.Code() {
-			case dynamodb.ErrCodeProvisionedThroughputExceededException:
-				log.Error(dynamodb.ErrCodeProvisionedThroughputExceededException, aerr.Error())
-			case dynamodb.ErrCodeResourceNotFoundException:
-				log.Error(dynamodb.ErrCodeResourceNotFoundException, aerr.Error())
-			case dynamodb.ErrCodeRequestLimitExceeded:
-				log.Error(dynamodb.ErrCodeRequestLimitExceeded, aerr.Error())
-			case dynamodb.ErrCodeInternalServerError:
-				log.Error(dynamodb.ErrCodeInternalServerError, aerr.Error())
-			default:
-				log.Error(aerr.Error())
-			}
+			log.Error(aerr.Code(), aerr.Error())
 		} else {
 			log.Error(err.Error())
 		}

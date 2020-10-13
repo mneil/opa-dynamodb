@@ -1,6 +1,7 @@
 package store
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -19,7 +20,22 @@ func (m *MockedDynamo) Query(input *dynamodb.QueryInput) (*dynamodb.QueryOutput,
 	args := m.Called(input)
 	out := args.Get(0).(*dynamodb.QueryOutput)
 	return out, args.Error(1)
+}
 
+type AwsError struct {
+	code string
+}
+
+func (e *AwsError) Code() string {
+	return e.code
+}
+func (e *AwsError) Error() string {
+	return e.code
+}
+func NewAwsError(code string) *AwsError {
+	return &AwsError{
+		code: code,
+	}
 }
 
 func TestNewDynamoStore(t *testing.T) {
@@ -35,11 +51,6 @@ func TestNewDynamoStore(t *testing.T) {
 }
 
 func TestGet(t *testing.T) {
-	mocked := &MockedDynamo{}
-	store := &DynamoStore{
-		svc:       mocked,
-		TableName: "Foo",
-	}
 	cases := []struct {
 		name      string
 		output    *dynamodb.QueryOutput
@@ -58,23 +69,52 @@ func TestGet(t *testing.T) {
 			principal: "bar",
 			expect:    "",
 		},
-		// {
-		// 	name: "Query returns empty output",
-		// 	output: &dynamodb.QueryOutput{
-		// 		Items: []map[string]*dynamodb.AttributeValue{},
-		// 	},
-		// 	err:       nil,
-		// 	namespace: "foo",
-		// 	principal: "bar",
-		// 	expect: []map[string]interface{}{
-		// 		{
-		// 			"foo": "bar",
-		// 		},
-		// 	},
-		// },
+		{
+			name: "Throughput AWS error returned",
+			output: &dynamodb.QueryOutput{
+				Items: []map[string]*dynamodb.AttributeValue{},
+			},
+			err:       NewAwsError(dynamodb.ErrCodeProvisionedThroughputExceededException),
+			namespace: "",
+			principal: "",
+			expect:    "",
+		},
+		{
+			name: "return a random non aws error",
+			output: &dynamodb.QueryOutput{
+				Items: []map[string]*dynamodb.AttributeValue{},
+			},
+			err:       errors.New("random error"),
+			namespace: "",
+			principal: "",
+			expect:    "",
+		},
+		{
+			name: "Query returns simple key,value",
+			output: &dynamodb.QueryOutput{
+				Items: []map[string]*dynamodb.AttributeValue{
+					{
+						"foo": &dynamodb.AttributeValue{S: aws.String("bar")},
+					},
+				},
+			},
+			err:       nil,
+			namespace: "foo",
+			principal: "bar",
+			expect: []map[string]interface{}{
+				{
+					"foo": "bar",
+				},
+			},
+		},
 	}
 	// our actual tests is here in the loop
 	for _, c := range cases {
+		mocked := &MockedDynamo{}
+		store := &DynamoStore{
+			svc:       mocked,
+			TableName: "Foo",
+		}
 		mocked.On("Query", mock.Anything).Return(c.output, c.err)
 		res, err := store.Get(c.namespace, c.principal)
 		assert.Equal(t, c.expect, res, c.name)

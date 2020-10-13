@@ -18,4 +18,7 @@ test:
 	go test -cover -coverprofile cover.out ./...
 	go tool cover -func cover.out
 
+cover: test
+	go tool cover -html=cover.out -o cover.html
+
 .PHONY: run unit integration

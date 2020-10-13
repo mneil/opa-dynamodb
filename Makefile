@@ -9,12 +9,13 @@ run:
 		--set=services.opa.credentials=null
 
 unit:
-	go test -cover -v -short ./...
+	go test -v -short ./...
 
 integration:
 	go test -run Integration ./...
 
 test:
+	# Run full test suite
 	go test -cover -coverprofile cover.out ./...
 	go tool cover -func cover.out
 

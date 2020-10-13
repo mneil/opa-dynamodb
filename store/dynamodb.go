@@ -65,6 +65,7 @@ func (dynamo *DynamoStore) Get(namespace string, principal string) (interface{},
 	}
 	result, err := dynamo.svc.Query(input)
 	if err != nil {
+		log.Error("Error querying data from dynamodb")
 		if aerr, ok := err.(awserr.Error); ok {
 			log.Error(aerr.Code(), aerr.Error())
 		} else {
@@ -74,8 +75,10 @@ func (dynamo *DynamoStore) Get(namespace string, principal string) (interface{},
 	}
 	itemLength := len(result.Items)
 	if itemLength == 0 {
+		log.Debug("No items returned from dynamodb")
 		return "", nil
 	}
+	log.Debugf("%d items returned from dynamodb", itemLength)
 	items := make([]map[string]interface{}, len(result.Items))
 	for index, item := range result.Items {
 		var tmpItem map[string]interface{}
@@ -84,5 +87,6 @@ func (dynamo *DynamoStore) Get(namespace string, principal string) (interface{},
 		delete(tmpItem, dynamo.SortKey)
 		items[index] = tmpItem
 	}
+	log.Debugf("Policy from dynamodb %v", items)
 	return items, nil
 }

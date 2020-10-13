@@ -23,9 +23,14 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// IService is a service interface for the DynamoStore struct. This allows mocking the service
+type IService interface {
+	Query(input *dynamodb.QueryInput) (*dynamodb.QueryOutput, error)
+}
+
 // DynamoStore is a backend for policies from dynamodb
 type DynamoStore struct {
-	svc          *dynamodb.DynamoDB
+	svc          IService
 	TableName    string
 	PartitionKey string
 	SortKey      string

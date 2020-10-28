@@ -1,6 +1,6 @@
 # OPA DynamoDB
 
-Infinitely scalable policy store with instantaneous policy updates for use by small and enterprise scale teams wanting to use Open Policy Agent.
+Scalable policy store with real-time policy updates for use by small and enterprise scale teams wanting to use Open Policy Agent.
 
 OPA DynamoDB adds custom functionality to rego policies to query data from DynamoDB.
 
@@ -14,7 +14,7 @@ OPA has several strategies for managing policies at scale and accepting internal
 
 DynamoDB is an excellent backend for policy data. You can store documentesque data across dynamo rows and query them using a collections pattern. This method is efficient (single read to get entire policy) and scalable (dynamodb storage is extremely scalable).
 
-If you want to understand more about Single Table Design, item collections, and DynamoDB in general I recommend this book by Alex Debrie https://www.dynamodbbook.com/. I have no affiliation with Alex or his book. It's that good.
+If you want to understand more about Single Table Design, item collections, and DynamoDB in general I recommend this book by Alex Debrie https://www.dynamodbbook.com/. I have no affiliation with Alex or his book.
 
 ## Architecture
 

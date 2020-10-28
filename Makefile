@@ -16,7 +16,7 @@ integration:
 
 test:
 	# Run full test suite
-	go test -cover -coverprofile cover.out ./...
+	go test -v -cover -coverprofile cover.out ./...
 	go tool cover -func cover.out
 
 cover: test

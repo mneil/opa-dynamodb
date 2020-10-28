@@ -23,9 +23,14 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// IService is a service interface for the DynamoStore struct. This allows mocking the service
+type IService interface {
+	Query(input *dynamodb.QueryInput) (*dynamodb.QueryOutput, error)
+}
+
 // DynamoStore is a backend for policies from dynamodb
 type DynamoStore struct {
-	svc          *dynamodb.DynamoDB
+	svc          IService
 	TableName    string
 	PartitionKey string
 	SortKey      string
@@ -60,19 +65,9 @@ func (dynamo *DynamoStore) Get(namespace string, principal string) (interface{},
 	}
 	result, err := dynamo.svc.Query(input)
 	if err != nil {
+		log.Error("Error querying data from dynamodb")
 		if aerr, ok := err.(awserr.Error); ok {
-			switch aerr.Code() {
-			case dynamodb.ErrCodeProvisionedThroughputExceededException:
-				log.Error(dynamodb.ErrCodeProvisionedThroughputExceededException, aerr.Error())
-			case dynamodb.ErrCodeResourceNotFoundException:
-				log.Error(dynamodb.ErrCodeResourceNotFoundException, aerr.Error())
-			case dynamodb.ErrCodeRequestLimitExceeded:
-				log.Error(dynamodb.ErrCodeRequestLimitExceeded, aerr.Error())
-			case dynamodb.ErrCodeInternalServerError:
-				log.Error(dynamodb.ErrCodeInternalServerError, aerr.Error())
-			default:
-				log.Error(aerr.Error())
-			}
+			log.Error(aerr.Code(), aerr.Error())
 		} else {
 			log.Error(err.Error())
 		}
@@ -80,8 +75,10 @@ func (dynamo *DynamoStore) Get(namespace string, principal string) (interface{},
 	}
 	itemLength := len(result.Items)
 	if itemLength == 0 {
+		log.Debug("No items returned from dynamodb")
 		return "", nil
 	}
+	log.Debugf("%d items returned from dynamodb", itemLength)
 	items := make([]map[string]interface{}, len(result.Items))
 	for index, item := range result.Items {
 		var tmpItem map[string]interface{}
@@ -90,5 +87,6 @@ func (dynamo *DynamoStore) Get(namespace string, principal string) (interface{},
 		delete(tmpItem, dynamo.SortKey)
 		items[index] = tmpItem
 	}
+	log.Debugf("Policy from dynamodb %v", items)
 	return items, nil
 }

@@ -23,8 +23,53 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/open-policy-agent/opa/ast"
+	"github.com/open-policy-agent/opa/rego"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
+
+type MockedStore struct {
+	mock.Mock
+}
+
+func (m *MockedStore) Get(namespace string, principal string) (interface{}, error) {
+	args := m.Called(namespace, principal)
+	return args.Get(0), args.Error(1)
+}
+
+func TestPolicyGet(t *testing.T) {
+	cases := []struct {
+		name      string
+		namespace string
+		principal string
+		output    interface{}
+		err       error
+		expect    *ast.Term
+	}{
+		{
+			name:      "ok",
+			namespace: "foo/bar",
+			principal: "baz",
+			output:    []map[string]string{},
+			err:       nil,
+			expect:    &ast.Term{Value: ast.Value(nil)},
+		},
+	}
+	for _, c := range cases {
+		store := &MockedStore{}
+		policy := NewPolicy("foo", store)
+		store.On("Get", c.namespace, c.principal).Return(c.output, c.err)
+		bctx := rego.BuiltinContext{}
+
+		res, err := policy.Get(bctx, ast.StringTerm(c.namespace), ast.StringTerm(c.principal))
+		assert.Equal(t, c.expect, res, c.name)
+		if c.err != nil {
+			assert.Nil(t, err, c.name)
+		}
+	}
+
+}
 
 func TestPolicyDataIntegration(t *testing.T) {
 	// requires dynamo db connection and runs local opa server

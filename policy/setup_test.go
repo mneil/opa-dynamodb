@@ -145,5 +145,12 @@ func TestMain(m *testing.M) {
 		// deflate db
 		deleteDynamoDBTable()
 	}
+	if code == 0 && testing.CoverMode() != "" {
+		c := testing.Coverage()
+		if c < 0.8 {
+			fmt.Println("Tests failed for < 80% coverage", c)
+			code = -1
+		}
+	}
 	os.Exit(code)
 }

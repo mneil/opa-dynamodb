@@ -18,6 +18,14 @@ services:
     links:
       - dynamodb:dynamodb
     command: tail -f /dev/null
+  dynamodb-admin:
+    image: aaronshaf/dynamodb-admin
+    environment:
+      DYNAMO_ENDPOINT: http://dynamodb:8000
+    depends_on:
+      - dynamodb
+    ports:
+      - 8080:8001
   dynamodb:
     image: amazon/dynamodb-local
     command: -jar DynamoDBLocal.jar -sharedDb

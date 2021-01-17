@@ -55,7 +55,15 @@ Up to this point you have:
 Now you can query OPA to evaluate your policy file. The following query will check if user bob has the ability to read data on server123.
 
 ```sh
-curl -X POST http://localhost:8181/v1/data/rbac \
-		-H "Content-Type: application/json" \
-		--data '{"input":{"user":"bob","action":"read","object":"server123"}}'
+curl -X POST http://localhost:8181/v1/data/rbac/allow \
+	-H "Content-Type: application/json" \
+	--data '{"input":{"namespace":"foo/bar","principal":"bob","action":"read","object":"server123"}}'
 ```
+
+You should receive a response similar to:
+
+```json
+{"decision_id":"648eccb3-5d8b-4001-8a7a-9e87014ea36a","result":false}
+```
+
+Try changing the principal to alice instead and the result will be true.

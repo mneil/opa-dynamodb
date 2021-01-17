@@ -90,51 +90,44 @@ func TestPolicyDataIntegration(t *testing.T) {
 		policy    string
 		principal string
 		namespace string
-		data      []map[string]string
+		action    string
+		object    string
 		allow     bool
 	}{
 		{
 			name:      "rbac not allow bob",
 			policy:    "rbac/authz",
-			principal: "baz",
+			principal: "bob",
 			namespace: "foo/bar",
-			data: []map[string]string{
-				{
-					"user":   "bob",
-					"action": "read",
-					"object": "server123",
-				},
-			},
-			allow: false,
+			action:    "read",
+			object:    "server123",
+			allow:     false,
 		},
 		{
 			name:      "rbac allow alice",
 			policy:    "rbac/authz",
-			principal: "baz",
+			principal: "alice",
 			namespace: "foo/bar",
-			data: []map[string]string{
-				{
-					"user":   "alice",
-					"action": "read",
-					"object": "server123",
-				},
-			},
-			allow: false,
+			action:    "read",
+			object:    "server123",
+			allow:     true,
 		},
 	}
 	// our actual tests is here in the loop
 	for _, c := range cases {
 		body, err := json.Marshal(struct {
-			Input interface{}
+			Input interface{} `json:"input"`
 		}{
 			Input: struct {
-				principal string
-				namespace string
-				data      []map[string]string
+				Principal string `json:"principal"`
+				Namespace string `json:"namespace"`
+				Action    string `json:"action"`
+				Object    string `json:"object"`
 			}{
-				principal: c.principal,
-				namespace: c.namespace,
-				data:      c.data,
+				Principal: c.principal,
+				Namespace: c.namespace,
+				Action:    c.action,
+				Object:    c.object,
 			},
 		})
 		resp, err := http.Post(
@@ -146,13 +139,18 @@ func TestPolicyDataIntegration(t *testing.T) {
 		defer resp.Body.Close()
 		assert.Equal(t, http.StatusOK, resp.StatusCode, c.name)
 		body, err = ioutil.ReadAll(resp.Body)
-		var v struct {
-			result struct {
-				allow bool
-			}
-		}
+		v := Response{}
 		json.Unmarshal(body, &v)
-		assert.Equal(t, c.allow, v.result.allow, c.name)
+		fmt.Print("THE RESULT")
+		fmt.Print(string(body))
+		assert.Equal(t, c.allow, v.Result.Allow, c.name)
 	}
+}
 
+type Result struct {
+	Allow bool `json:"allow"`
+}
+
+type Response struct {
+	Result Result `json:"result"`
 }

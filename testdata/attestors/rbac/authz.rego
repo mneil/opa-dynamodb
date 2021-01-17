@@ -19,9 +19,9 @@ role_permissions := {
 default allow = false
 allow {
     # lookup the list of roles for the user
-    roles := dynamodb.policy("foo/bar", input.user)
+    policy := dynamodb.policy(input.namespace, input.principal)
     # for each role in that list
-    r := roles[_]
+    r := policy.roles[_]
     # lookup the permissions list for role r
     permissions := role_permissions[r]
     # for each permission

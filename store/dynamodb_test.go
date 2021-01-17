@@ -101,10 +101,8 @@ func TestGet(t *testing.T) {
 			err:       nil,
 			namespace: "foo",
 			principal: "bar",
-			expect: []map[string]interface{}{
-				{
-					"foo": "bar",
-				},
+			expect: map[string]interface{}{
+				"foo": "bar",
 			},
 		},
 	}

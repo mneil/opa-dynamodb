@@ -63,6 +63,7 @@ func (dynamo *DynamoStore) Get(namespace string, principal string) (interface{},
 		KeyConditionExpression: aws.String("#PK = :pk AND #SK = :sk"),
 		TableName:              aws.String(dynamo.TableName),
 	}
+	log.Debugf("Query input %v", input)
 	result, err := dynamo.svc.Query(input)
 	if err != nil {
 		log.Error("Error querying data from dynamodb")
@@ -73,13 +74,13 @@ func (dynamo *DynamoStore) Get(namespace string, principal string) (interface{},
 		}
 		return "", err
 	}
+	log.Debugf("Query result items %v", result.Items)
 	itemLength := len(result.Items)
 	if itemLength == 0 {
 		log.Debug("No items returned from dynamodb")
 		return "", nil
 	}
-	log.Debugf("%d items returned from dynamodb", itemLength)
-	items := make([]map[string]interface{}, len(result.Items))
+	items := make([]map[string]interface{}, itemLength)
 	for index, item := range result.Items {
 		var tmpItem map[string]interface{}
 		dynamodbattribute.UnmarshalMap(item, &tmpItem)
@@ -87,6 +88,7 @@ func (dynamo *DynamoStore) Get(namespace string, principal string) (interface{},
 		delete(tmpItem, dynamo.SortKey)
 		items[index] = tmpItem
 	}
-	log.Debugf("Policy from dynamodb %v", items)
-	return items, nil
+	log.Debugf("Policy from dynamodb %v", items[0])
+	// There should only ever be one based on the query above
+	return items[0], nil
 }

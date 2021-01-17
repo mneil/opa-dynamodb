@@ -8,6 +8,10 @@ run:
 		--authorization=basic \
 		--set=services.opa.credentials=null
 
+serve-docs:
+	# Requires nodejs and docsify
+	docsify serve ./docs
+
 unit:
 	go test -v -short ./...
 

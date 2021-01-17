@@ -1,0 +1,315 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: |
+  Deploy OPA DynamoDB to aws Fargate Modified from 
+  https://github.com/1Strategy/fargate-cloudformation-example
+Parameters:
+  VPC:
+    Type: AWS::EC2::VPC::Id
+  SubnetA:
+    Type: AWS::EC2::Subnet::Id
+  SubnetB:
+    Type: AWS::EC2::Subnet::Id
+  Certificate:
+    Type: String
+    Default: arn:aws:acm:region:123456789012:certificate/00000000-0000-0000-0000-000000000000
+  Image:
+    Type: String
+    Default: opa-dynamodb:latest
+  ServiceName:
+    Type: String
+    Default: OPADynamoDB
+  ContainerPort:
+    Type: Number
+    Default: 80
+  LoadBalancerPort:
+    Type: Number
+    Default: 443
+  HealthCheckPath:
+    Type: String
+    Default: /healthcheck
+  HostedZoneName:
+    Type: String
+  Subdomain:
+    Type: String
+    Default: opa
+  MinContainers:
+    Type: Number
+    Default: 2
+  MaxContainers:
+    Type: Number
+    Default: 10
+  AutoScalingTargetValue:
+    Type: Number
+    Default: 50
+
+Resources:
+  Cluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Join ['', [!Ref ServiceName, Cluster]]
+  TaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    DependsOn: LogGroup
+    Properties:
+      Family: !Join ['', [!Ref ServiceName, TaskDefinition]]
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      Cpu: 1024
+      Memory: 1GB
+      ExecutionRoleArn: !Ref ExecutionRole
+      TaskRoleArn: !Ref TaskRole
+      ContainerDefinitions:
+        - Name: !Ref ServiceName
+          Image: !Ref Image
+          PortMappings:
+            - ContainerPort: !Ref ContainerPort
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-region: !Ref AWS::Region
+              awslogs-group: !Ref LogGroup
+              awslogs-stream-prefix: ecs
+  ExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Join ['', [!Ref ServiceName, ExecutionRole]]
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+  TaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Join ['', [!Ref ServiceName, TaskRole]]
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+  TaskPolicy:
+    Type: AWS::IAM::Policy
+    Properties: 
+      PolicyName: OpaDynamoTaskPolicy
+      Roles: 
+        - !Ref TaskRole
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - dynamodb:ConditionCheckItem
+              - dynamodb:DeleteItem
+              - dynamodb:GetItem
+              - dynamodb:PutItem
+              - dynamodb:Query
+              - dynamodb:UpdateItem
+            Resource:
+              - '*'
+  AutoScalingRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Join ['', [!Ref ServiceName, AutoScalingRole]]
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceAutoscaleRole
+  ContainerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Join ['', [!Ref ServiceName, ContainerSecurityGroup]]
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: !Ref ContainerPort
+          ToPort: !Ref ContainerPort
+          SourceSecurityGroupId: !Ref LoadBalancerSecurityGroup
+  LoadBalancerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Join ['', [!Ref ServiceName, LoadBalancerSecurityGroup]]
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: !Ref LoadBalancerPort
+          ToPort: !Ref LoadBalancerPort
+          CidrIp: 0.0.0.0/0
+  Service:
+    Type: AWS::ECS::Service
+    DependsOn:
+      - ListenerHTTPS
+    Properties: 
+      ServiceName: !Ref ServiceName
+      Cluster: !Ref Cluster
+      TaskDefinition: !Ref TaskDefinition
+      DeploymentConfiguration:
+        MinimumHealthyPercent: 100
+        MaximumPercent: 200
+      DesiredCount: 2
+      HealthCheckGracePeriodSeconds: 30
+      LaunchType: FARGATE
+      NetworkConfiguration: 
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          Subnets:
+            - !Ref SubnetA
+            - !Ref SubnetB
+          SecurityGroups:
+            - !Ref ContainerSecurityGroup
+      LoadBalancers:
+        - ContainerName: !Ref ServiceName
+          ContainerPort: !Ref ContainerPort
+          TargetGroupArn: !Ref TargetGroup
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: 10
+      HealthCheckPath: !Ref HealthCheckPath
+      HealthCheckTimeoutSeconds: 5
+      UnhealthyThresholdCount: 2
+      HealthyThresholdCount: 2
+      Name: !Join ['', [!Ref ServiceName, TargetGroup]]
+      Port: !Ref ContainerPort
+      Protocol: HTTP
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: 60
+      TargetType: ip
+      VpcId: !Ref VPC
+  ListenerHTTPS:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - TargetGroupArn: !Ref TargetGroup
+          Type: forward
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: !Ref LoadBalancerPort
+      Protocol: HTTPS
+      Certificates:
+        - CertificateArn: !Ref Certificate
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      LoadBalancerAttributes:
+        - Key: idle_timeout.timeout_seconds
+          Value: 60
+      Name: !Join ['', [!Ref ServiceName, LoadBalancer]]
+      Scheme: internet-facing
+      SecurityGroups:
+        - !Ref LoadBalancerSecurityGroup
+      Subnets:
+        - !Ref SubnetA
+        - !Ref SubnetB
+  DNSRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneName: !Join ['', [!Ref HostedZoneName, .]]
+      Name: !Join ['', [!Ref Subdomain, ., !Ref HostedZoneName, .]]
+      Type: A
+      AliasTarget:
+        DNSName: !GetAtt LoadBalancer.DNSName
+        HostedZoneId: !GetAtt LoadBalancer.CanonicalHostedZoneID
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Join ['', [/ecs/, !Ref ServiceName, TaskDefinition]]
+  AutoScalingTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Properties:
+      MinCapacity: !Ref MinContainers
+      MaxCapacity: !Ref MaxContainers
+      ResourceId: !Join ['/', [service, !Ref Cluster, !GetAtt Service.Name]]
+      ScalableDimension: ecs:service:DesiredCount
+      ServiceNamespace: ecs
+      RoleARN: !GetAtt AutoScalingRole.Arn
+  AutoScalingPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Properties:
+      PolicyName: !Join ['', [!Ref ServiceName, AutoScalingPolicy]]
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref AutoScalingTarget
+      TargetTrackingScalingPolicyConfiguration:
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ECSServiceAverageCPUUtilization
+        ScaleInCooldown: 10
+        ScaleOutCooldown: 10
+        TargetValue: !Ref AutoScalingTargetValue
+  DynamoTable:  
+    Type: AWS::DynamoDB::Table
+    Properties: 
+      AttributeDefinitions: 
+        - AttributeName: PK
+          AttributeType: S
+        - AttributeName: SK
+          AttributeType: S
+      BillingMode: PAY_PER_REQUEST 
+      KeySchema: 
+        - AttributeName: PK
+          KeyType: HASH
+        - AttributeName: SK
+          KeyType: RANGE
+      PointInTimeRecoverySpecification: 
+        PointInTimeRecoveryEnabled: True
+      SSESpecification: 
+        KMSMasterKeyId: String
+        SSEEnabled: True
+        SSEType: KMS
+      TableName: OpaDynamoDB
+  DynamoKey:
+    Type: AWS::KMS::Key
+    Properties: 
+      Description: A KMS Key for OPA DynamoDB Table
+      Enabled: True
+      EnableKeyRotation: True
+      KeyPolicy: 
+        Version: 2012-10-17
+        Statement:
+          - Sid : Allow access through Amazon DynamoDB for all principals in the account that are authorized to use Amazon DynamoDB
+            Effect : Allow
+            Principal :
+              AWS : '*'
+            Action:
+              - kms:Encrypt
+              - kms:Decrypt
+              - kms:ReEncrypt*
+              - kms:GenerateDataKey*
+              - kms:CreateGrant
+              - kms:DescribeKey
+            Resource: '*'
+            Condition:
+              StringEquals:
+                kms:CallerAccount: !Ref AWS::AccountId
+                kms:ViaService: !Sub dynamodb.${AWS::Region}.amazonaws.com
+          - Sid: Allow direct access to key metadata to the account
+            Effect: Allow
+            Principal:
+              AWS : !Sub arn:aws:iam::${AWS::AccountId}:root
+            Action:
+              - kms:Describe*
+              - kms:Get*
+              - kms:List*
+              - kms:RevokeGrant
+            Resource : '*'
+          - Sid: Allow DynamoDB Service with service principal name dynamodb.amazonaws.com to describe the key directly
+            Effect: Allow
+            Principal:
+              Service: dynamodb.amazonaws.com
+            Action: 
+              - kms:Describe*
+              - kms:Get*
+              - kms:List* 
+            Resource : '*'
+
+Outputs:
+  Endpoint:
+    Description: Endpoint
+    Value: !Join ['', ['https://', !Ref DNSRecord]]

@@ -1,23 +1,29 @@
 version: '3'
 services:
   opa:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    init: true
-    volumes:
-      - ..:/workspace:cached
+    image: mneil/opa-dynamodb
+    command:
+      - run
+      -   --server
+      -   --log-format=json-pretty
+      -   --set=decision_logs.console=true
+      -   --log-level=debug
+      -   /quickstart/rbac.rego
     environment:
       ENDPOINT_URL: http://dynamodb:8000/
+      # No need to change this. DynamoLocal doesn't verify authentication
       AWS_REGION: us-east-1
       AWS_ACCESS_KEY_ID: foo
       AWS_SECRET_ACCESS_KEY: bar
-      TABLE_NAME: OpaDynamodbIntegrationTest
+      TABLE_NAME: OpaDynamoDB
+    ports:
+      - 8181:8181
     depends_on:
       - dynamodb
     links:
       - dynamodb:dynamodb
-    command: tail -f /dev/null
+    volumes:
+      - .:/quickstart
   dynamodb-admin:
     image: aaronshaf/dynamodb-admin
     environment:
@@ -25,7 +31,10 @@ services:
     depends_on:
       - dynamodb
     ports:
-      - 8080:8001
+      - 8001:8001
   dynamodb:
     image: amazon/dynamodb-local
     command: -jar DynamoDBLocal.jar -sharedDb
+    ports:
+      - 9000:8000
+

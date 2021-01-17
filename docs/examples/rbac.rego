@@ -1,4 +1,4 @@
-package rbac.authz
+package rbac
 
 # user-role assignments
 # user_roles := dynamodb.policy("foo/bar", "alice")
@@ -14,12 +14,11 @@ role_permissions := {
                     {"action": "write", "object": "server123"}],
     "hr":          [{"action": "read",  "object": "database456"}]
 }
-
+# lookup the list of roles for the user
+policy := dynamodb.policy(input.namespace, input.principal)
 # logic that implements RBAC.
 default allow = false
 allow {
-    # lookup the list of roles for the user
-    policy := dynamodb.policy(input.namespace, input.principal)
     # for each role in that list
     r := policy.roles[_]
     # lookup the permissions list for role r

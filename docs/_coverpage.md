@@ -1,11 +1,12 @@
 
-# OPA DynamoDB <small>0.2</small>
+# OPA DynamoDB <small>0.1.0</small>
 
 > DynamoDB Backend for Open Policy Agent
 
-- Simple and lightweight
-- No statically built html files
-- Multiple themes
-
 [GitHub](https://github.com/mneil/opa-dynamodb/)
-[Get Started](#docsify)
+[Get Started](#opa-dynamodb)
+
+
+<!-- background color -->
+
+![color](linear-gradient(to-right,#C4B3FF,#DAFFB3))

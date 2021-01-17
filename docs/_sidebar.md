@@ -1,13 +1,7 @@
-- Getting started
-
-  - [Quick start](quickstart.md)
-
-- Customization
-
-  - [Configuration](configuration.md)
+- [Getting started](quickstart.md)
 
 - Guide
-
+  - [Configuration](configuration.md)
   - [Deploy](deploy.md)
 
 - [Changelog](changelog.md)

@@ -10,6 +10,8 @@ OPA has several strategies for managing policies at scale and accepting internal
  - AWS credentials can be infered by the credentials chain in Goland AWS SDK
  - Retry logic and caching are implemented by the AWS SDK and this implementation
 
+See the [User Documentation](https://mneil.github.io/opa-dynamodb) for setup and usage.
+
 ## DynamoDB As A Backend
 
 DynamoDB is an excellent backend for policy data. You can store documentesque data across dynamo rows and query them using a collections pattern. This method is efficient (single read to get entire policy) and scalable (dynamodb storage is extremely scalable).
